@@ -15,15 +15,28 @@ from api.app import app as flask_app
 
 
 class VercelPathFix:
-    """WSGI middleware that restores the /api prefix stripped by Vercel's runtime."""
-
+    """
+    WSGI Middleware to fix routing on Vercel.
+    Vercel's Python runtime can sometimes overwrite PATH_INFO with the rewrite destination 
+    (e.g. /api/index.py) or strip the /api prefix. This explicitly restores the true PATH_INFO 
+    from the original request URI.
+    """
     def __init__(self, wsgi_app):
         self.wsgi_app = wsgi_app
 
     def __call__(self, environ, start_response):
-        path = environ.get("PATH_INFO", "")
-        if not path.startswith("/api"):
-            environ["PATH_INFO"] = "/api" + path
+        # Prefer the original requested URI if available from standard WSGI/Vercel headers
+        req_uri = environ.get("REQUEST_URI") or environ.get("RAW_URI") or environ.get("HTTP_X_NOW_ROUTE_MATCHES")
+        if req_uri:
+            # Strip query string for PATH_INFO
+            path = req_uri.split("?")[0]
+            environ["PATH_INFO"] = path
+        else:
+            # Fallback for environments that just strip the /api prefix
+            path = environ.get("PATH_INFO", "")
+            if not path.startswith("/api"):
+                environ["PATH_INFO"] = "/api" + path
+                
         return self.wsgi_app(environ, start_response)
 
 
