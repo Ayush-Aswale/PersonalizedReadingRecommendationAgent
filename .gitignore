@@ -1,0 +1,47 @@
+# Environment secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Database (generated at setup)
+database/app.db
+database/chroma/
+
+# React build output
+frontend/dist/
+frontend/node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Test / coverage
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Misc
+*.log
+
+# Local dataset/database artifacts
+books_raw_temp.csv
+chroma.sqlite3
