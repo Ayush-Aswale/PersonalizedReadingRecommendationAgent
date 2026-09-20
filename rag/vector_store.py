@@ -4,24 +4,23 @@ Dual-mode: uses local Chroma directory if local, otherwise uses hosted vector st
 """
 
 from typing import List, Dict, Any, Tuple
-from langchain_community.vectorstores import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
-
 from config.settings import settings
 
 # Singletons
 _vector_store = None
 _embeddings = None
 
-def get_embeddings() -> HuggingFaceEmbeddings:
+def get_embeddings():
     global _embeddings
     if _embeddings is None:
+        from langchain_huggingface import HuggingFaceEmbeddings
         _embeddings = HuggingFaceEmbeddings(model_name=settings.EMBEDDING_MODEL_NAME)
     return _embeddings
 
-def get_vector_store() -> Chroma:
+def get_vector_store():
     global _vector_store
     if _vector_store is None:
+        from langchain_community.vectorstores import Chroma
         embeddings = get_embeddings()
         
         if settings.is_production:
