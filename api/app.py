@@ -3,7 +3,7 @@ Flask API layer for the recommendation agent.
 This is the same file used by Vercel serverless and mounted locally by Gradio.
 """
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 
 from agent.orchestrator import run_turn
@@ -14,19 +14,31 @@ import os
 from config.settings import settings
 
 dist_dir = str(settings.PROJECT_ROOT / "frontend" / "dist")
-app = Flask(__name__, static_folder=dist_dir, static_url_path="/")
+_dist_exists = os.path.isdir(dist_dir)
+# Do NOT set static_folder — Flask's built-in static handler would intercept SPA routes
+# before our catch-all can do the React Router fallback. We handle static serving manually.
+app = Flask(__name__)
 CORS(app) # Allow cross-origin requests if needed for separated frontends
 
 @app.route("/")
 def index():
-    return app.send_static_file("index.html")
+    if _dist_exists:
+        return send_from_directory(dist_dir, "index.html")
+    return jsonify({"status": "API is running", "frontend": "not built"}), 200
 
-# Serve other static files (like /assets/*)
+# Serve other static files (like /assets/*) and SPA fallback
 @app.route("/<path:path>")
 def serve_static(path):
-    if os.path.exists(os.path.join(dist_dir, path)):
-        return app.send_static_file(path)
-    return app.send_static_file("index.html") # fallback for React Router
+    # API routes that didn't match a defined endpoint should 404, not serve index.html
+    if path.startswith("api/"):
+        return jsonify({"error": "not found"}), 404
+    if _dist_exists:
+        file_path = os.path.join(dist_dir, path)
+        if os.path.isfile(file_path):
+            return send_from_directory(dist_dir, path)
+        # SPA fallback: return index.html for React Router client-side routes
+        return send_from_directory(dist_dir, "index.html")
+    return jsonify({"error": "not found"}), 404
 
 # ── Users ────────────────────────────────────────────────────────────────
 
